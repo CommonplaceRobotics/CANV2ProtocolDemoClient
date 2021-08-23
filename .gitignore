@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+/CANV2ProtocolDemoClient/.vs/CANV2ProtocolDemoClient/v16
+/CANV2ProtocolDemoClient/bin/Debug
+/CANV2ProtocolDemoClient/obj/Debug
