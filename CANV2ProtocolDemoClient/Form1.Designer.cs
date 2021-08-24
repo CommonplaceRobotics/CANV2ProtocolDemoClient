@@ -41,6 +41,8 @@
             this.buttonSetToZero = new System.Windows.Forms.Button();
             this.buttonStartReferencing = new System.Windows.Forms.Button();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.labelPosSetPoint = new System.Windows.Forms.Label();
+            this.labelMotorCurrent = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // buttonConnect
@@ -74,7 +76,7 @@
             // labelPosition
             // 
             this.labelPosition.AutoSize = true;
-            this.labelPosition.Location = new System.Drawing.Point(308, 132);
+            this.labelPosition.Location = new System.Drawing.Point(308, 141);
             this.labelPosition.Name = "labelPosition";
             this.labelPosition.Size = new System.Drawing.Size(129, 17);
             this.labelPosition.TabIndex = 3;
@@ -154,11 +156,31 @@
             // 
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
+            // labelPosSetPoint
+            // 
+            this.labelPosSetPoint.AutoSize = true;
+            this.labelPosSetPoint.Location = new System.Drawing.Point(308, 114);
+            this.labelPosSetPoint.Name = "labelPosSetPoint";
+            this.labelPosSetPoint.Size = new System.Drawing.Size(135, 17);
+            this.labelPosSetPoint.TabIndex = 11;
+            this.labelPosSetPoint.Text = "SetPointPosition: na";
+            // 
+            // labelMotorCurrent
+            // 
+            this.labelMotorCurrent.AutoSize = true;
+            this.labelMotorCurrent.Location = new System.Drawing.Point(308, 168);
+            this.labelMotorCurrent.Name = "labelMotorCurrent";
+            this.labelMotorCurrent.Size = new System.Drawing.Size(119, 17);
+            this.labelMotorCurrent.TabIndex = 12;
+            this.labelMotorCurrent.Text = "Motor Current: na";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.labelMotorCurrent);
+            this.Controls.Add(this.labelPosSetPoint);
             this.Controls.Add(this.buttonStartReferencing);
             this.Controls.Add(this.buttonSetToZero);
             this.Controls.Add(this.buttonEnable);
@@ -191,6 +213,8 @@
         private System.Windows.Forms.Button buttonSetToZero;
         private System.Windows.Forms.Button buttonStartReferencing;
         private System.Windows.Forms.Timer timer1;
+        private System.Windows.Forms.Label labelPosSetPoint;
+        private System.Windows.Forms.Label labelMotorCurrent;
     }
 }
 

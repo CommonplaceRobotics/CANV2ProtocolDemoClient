@@ -1,37 +1,4 @@
-﻿/*********************************************************************
- * Software License Agreement (BSD License)
- *
- *  Copyright (c) 2012-15, Commonplace Robotics GmbH
- *  http://www.commonplacerobotics.com
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/or other materials provided
- *     with the distribution.
- *   * Neither the name Commonplace Robotics nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
- *********************************************************************/
+﻿
 
 using System;
 using System.Collections.Generic;
@@ -39,19 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-// Composition of the status byte in the answer from the joints:
-// 0x0C: motors not enabled, comm watch dog - this can be a starting value
-// 0x04: motors not enabled, but all errors reset - this is the value after pressing the reset button
-// 0x00: everything fine, motor enabled - this is the value after pressing the enable button. Now the joints will move
-
-// bit 1 BrownOut or WatchDog
-// bit 2 Velocity lag
-// bit 3 Motor not enabled
-// bit 4 CommWatchDog
-// bit 5 Position lag
-// bit 6 Encoder error
-// bit 7 Over current
-// bit 8 CAN Error
 
 
 /// <summary>
@@ -131,10 +85,10 @@ namespace CPRCANV2Protocol
         /// <param name="jointsCurrent">the current joint values read from the hardware in degree</param>
         /// <param name="errorCodes">the joint error codes, see file start for explanation</param>
         /// <param name="digitalIn">the digital input values of the joint modules</param>
-        public void WriteJointSetPoints(double jointSetPoint, ref double jointCurrent, ref int errorCode, ref int digitalIn)
+        public void WriteJointSetPoints(double jointSetPoint, int digitalOut, ref double jointCurrent, ref int errorCode, ref string errorCodeString, ref double motorCurrent, ref int digitalIn)
         {
             double gearZero = 0;
-            double gearScale = 65.87;            
+            double gearScale = 1031.11;             // scale for iugs Rebel joint   
 
             if (flagStopSendingPositions)
                 return;
@@ -144,61 +98,62 @@ namespace CPRCANV2Protocol
             double tmpPos = 0.0;
             TPCANStatus stsResult;
             TPCANTimestamp CANTimeStamp;
-            
+                        
 
             lock (this)
             {
                 try
                 {
                     TPCANMsg CANMsg = new TPCANMsg();
-                    CANMsg.LEN = (byte)5;
+                    CANMsg.LEN = (byte)8;
                     CANMsg.MSGTYPE = TPCANMessageType.PCAN_MESSAGE_STANDARD;
 
                     // write the setPoint command
-                    tmpPos = gearZero + jointSetPoint * gearScale;        // generate the setPoint in encoder tics
-                    CANMsg.ID = messageID;                                      // the CAN ID of the joint
+                    // CPRCANV2 protocol:
+                    // 0x14 vel pos0 pos1 pos2 pos3 timer dout
+                    tmpPos = gearZero + jointSetPoint * gearScale;                  // generate the setPoint in encoder tics
+                    Int32 mPos = (Int32)tmpPos;
+                    CANMsg.ID = messageID;                                          // the CAN ID of the joint
                     CANMsg.DATA = new byte[8];
-                    CANMsg.DATA[0] = 0x04;                                          // first byte denominates the command, here: set joint position
+                    CANMsg.DATA[0] = 0x14;                                          // first byte denominates the command, here: set joint position
                     CANMsg.DATA[1] = (byte)0x00;                                    // velocity, not used
-                    CANMsg.DATA[2] = (byte)(tmpPos / 256);                          // SetPoint Position high byte
-                    CANMsg.DATA[3] = (byte)(tmpPos % 256);                          // SetPoint Position low byte
-                    CANMsg.DATA[4] = (byte)timeStamp;                               // Time stamp, can be found in the answer
-                    //CANMsg.DATA[5] = (byte)dOut[i];                               // Extension: The digital out state (not working in older firmware)
-                                                                                    // LEN has to be set to 6
+                    CANMsg.DATA[5] = (byte)(mPos & 0xFF);                           // SetPoint Position, pay attention to the indices 
+                    CANMsg.DATA[4] = (byte)((mPos >> 8) & 0xFF);
+                    CANMsg.DATA[3] = (byte)((mPos >> 16) & 0xFF);
+                    CANMsg.DATA[2] = (byte)((mPos >> 24) & 0xFF);
+                    CANMsg.DATA[6] = (byte)timeStamp;                               // Time stamp (not used)
+                    CANMsg.DATA[7] = (byte)digitalOut;                              // Digital our for this module, binary coded
+                                                                                    
 
                     stsResult = PCANBasic.Write(m_PcanHandle, ref CANMsg);          // write to the CAN bus
-                }
-                catch (Exception ex)
-                {
-                    ;
-                }
+                    if (stsResult != TPCANStatus.PCAN_ERROR_OK)
+                    {
+                        errorCode = 0x100;      // cannot write, set errorCode to "bus dead"
+                        throw (new Exception("PCAN: Cannot write: "));
+                    }
 
-                try
-                {
                     //wait a short time
-                    System.Threading.Thread.Sleep(3);
+                    System.Threading.Thread.Sleep(2);
 
                     //read the answer
-                    TPCANMsg CANMsg = new TPCANMsg();
+                    // please be aware: this is only a demo implementation!
+                    // for a real implementation all incoming messages have to be handeled!
+                    // This implementation misses some messages...
                     stsResult = PCANBasic.Read(m_PcanHandle, out CANMsg, out CANTimeStamp);
-                    if (CANMsg.ID == (messageID + 1))
+                    if (CANMsg.ID == (messageID + 1))                               // the answer is on CAN-ID+1
                     {
-                        // see the documentation for the full protocol
+                        // CPRCANV2 protocol of the answer:
+                        // err pos0 pos1 pos2 pos3 currentH currentL din 
                         errorCode = (int)CANMsg.DATA[0];
-
-                        int p1 = CANMsg.DATA[2];                                    // the current position is found in bytes 2 and 3
-                        int p2 = CANMsg.DATA[3];
-                        double p = 256 * p1 + p2;
-                        jointCurrent = (p - gearZero) / gearScale;
+                        int pos = CANMsg.DATA[1] * 256 * 65536 + CANMsg.DATA[2] * 65536 + CANMsg.DATA[3] * 256 + CANMsg.DATA[4];
+                        jointCurrent = (pos - gearZero) / gearScale;
+                        motorCurrent = (double)CANMsg.DATA[6];
                         digitalIn = (int)CANMsg.DATA[7];
 
                     }
                     else
                     {
-                        // if the received message is not the answer from the module we reset the adapter
-                        // a better solution: implement a read-thread and store the messages in a messages buffer.
-                        // then retrive the last message for the relevant ID
-                        PCANBasic.Reset(m_PcanHandle);
+                        errorCode = 0x200;  // no answer from the module, set errorCode to "dead"
                     }
 
                 }
@@ -206,7 +161,11 @@ namespace CPRCANV2Protocol
                 {
                     ;
                 }
-        }       // end of lock(this)
+                              
+
+                DecodeErrorCode(errorCode, ref errorCodeString);
+
+            }          // end of lock(this)
 
         }
 
@@ -325,6 +284,76 @@ namespace CPRCANV2Protocol
             PCANBasic.Write(m_PcanHandle, ref CANMsg);          
             flagStopSendingPositions = false;
                         
+        }
+
+
+        //**************************************************************************
+        private void DecodeErrorCode(int code, ref string shortStatus)
+        {
+            string s = "";
+            string ecshort = "";
+            if ((code & 0x01) != 0)
+            {                  // bit 1 
+                s += " - EStop / temperature ";
+                ecshort += " EStop/TEMP";
+            }
+            if ((code & 0x02) != 0)
+            {             // bit 2 
+                s += " - Driver Error";
+                ecshort += " DRV";
+            }
+            if ((code & 0x04) != 0)
+            {          // bit 3 Motor not enabled (not a real error)
+                s += " - motor not enabled";
+                ecshort += " MNE";
+            }
+            if ((code & 0x08) != 0)
+            {          // bit 4 CommWatchDog
+                s += " - comm watch dog";
+                ecshort += " COM";
+            }
+            if ((code & 0x10) != 0)
+            {          // bit 5 Schleppfehler
+                s += " - position lag";
+                ecshort += " LAG";
+            }
+            if ((code & 0x20) != 0)
+            {          // bit 6 Encoderfehler
+                s += " - encoder error";
+                ecshort += " ENC";
+            }
+            if ((code & 0x40) != 0)
+            {          // bit 7 OverCurrent
+                s += " - over current";
+                ecshort += " OC";
+            }
+            if ((code & 0x80) != 0)
+            {          // bit 8 SVM beim Torque-Motor
+                s += " - driver error";
+                ecshort += " DRV";
+            }
+
+            // und die lokalen Fehlerwerte
+            if ((code & 0x100) != 0)
+            {          // bit 9 bus tot
+                s += " - bus dead";
+                ecshort += " BUS";
+            }
+            if ((code & 0x200) != 0)
+            {          // bit 10 module tot
+                s += " - module dead";
+                ecshort += " DEAD";
+            }
+
+
+            if (s.Equals(""))
+            {
+                s = "no error";
+                ecshort = "No Error";
+                
+            }
+
+            shortStatus = ecshort;
         }
 
     }

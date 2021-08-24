@@ -15,13 +15,15 @@ namespace CPRCANV2Protocol
         private Multimedia.Timer robotMainLoop;
         private double cycleTime = 50;                          // the robot main loop runs with 20 Hz
 
-        private double jogValues = 0.0;             // the commanded velocities from 0.0 to 100.0
-        private double robOverride = 30.0;                      // from 0 to 100, scales the movion velocity
-        private double jointsSetPoint = 0.0;        // The joint set point values in degree 
-        private double jointsCurrent = 0.0;         // the current joint positions in degree, loaded from the robot arm
-        private int errorCodes = 0;                  // the error state of each joint module
-        private bool[] dout = new bool[7];                      // the wanted digital out channels
-        private bool[] din = new bool[7];                       // the current digital int channels
+        private double  jogValue = 0.0;                     // the commanded velocities from 0.0 to 100.0
+        private double  robOverride = 30.0;                      // from 0 to 100, scales the movion velocity
+        private double   jointPositionSetPoint = 0.0;        // The joint set point values in degree 
+        private double   jointPositionCurrent = 0.0;         // the current joint positions in degree, loaded from the robot arm
+        private int      jointErrorCode = 0;                  // the error state of each joint module
+        private string   jointErrorCodeString = "na";
+        private double   jointMotorCurrent = 0.0;
+        private bool[]  dout = new bool[7];                      // the wanted digital out channels
+        private bool[]  din = new bool[7];                       // the current digital int channels
         public HardwareInterface hwInterface;                   // the USB adapter interface
 
 
@@ -59,17 +61,18 @@ namespace CPRCANV2Protocol
         /// </summary>
         public void LoopMain(object sender, System.EventArgs ev)
         {
-            double jointMaxVelocity = 20.0;         // degree / sec
+            double jointMaxVelocity = 45.0;         // degree / sec
+            int tmpDOut = 0;
             int tmpDIn = 0;
 
             lock (this)
             {
 
                 // Generate new joint setpoints based on the old ones, the jog values and the override
-                jointsSetPoint += (jogValues / 100.0) * (robOverride / 100.0) * (cycleTime / 1000.0) * jointMaxVelocity;       // vel ist in °/s
+                jointPositionSetPoint += (jogValue / 100.0) * (robOverride / 100.0) * (cycleTime / 1000.0) * jointMaxVelocity;       // vel ist in °/s
                 
                 // Forward the set point values to the hardware interface. This writes the values to the CAN field bus
-                hwInterface.WriteJointSetPoints(jointsSetPoint, ref jointsCurrent, ref errorCodes, ref tmpDIn);
+                hwInterface.WriteJointSetPoints(jointPositionSetPoint, tmpDOut, ref jointPositionCurrent, ref jointErrorCode, ref jointErrorCodeString, ref jointMotorCurrent, ref tmpDIn);
 
                 // The digital input values are coded in one int per joint. Each bit represents an input channel.
                 // For the Mover4 and Mover6 robots only the first joint provides connected digital inputs
@@ -90,10 +93,12 @@ namespace CPRCANV2Protocol
         /// </summary>
         public void ResetJoints()
         {
+            this.SetJogValue(0);
+
             lock (this)
             {
                  // first copy the hardware positions to the setpoint positions
-                 jointsSetPoint = jointsCurrent;
+                 jointPositionSetPoint = jointPositionCurrent;
 
                 // then reset the joints to state 0x04
                 hwInterface.ResetErrors();
@@ -115,7 +120,7 @@ namespace CPRCANV2Protocol
         //***************************************************************
         public double GetOverride()
         {
-                return robOverride; 
+             return robOverride; 
         }
 
         //***************************************************************
@@ -126,7 +131,30 @@ namespace CPRCANV2Protocol
         {
             lock (this)
             {
-                jogValues = jv;
+                jogValue = jv;
+            }
+        }
+        //***************************************************************
+        /// <summary>
+        /// jog value from -100 to 100
+        /// </summary>
+        public double GetJogValue()
+        {
+            return jogValue;
+        }
+
+        //***************************************************************
+        /// <summary>
+        /// Sets the joints current value to zero. 
+        /// The joint is in error mode afterwards (position lag)
+        /// </summary>
+        public void SetToZero(double jv)
+        {
+            ResetJoints();
+
+            lock (this)
+            {
+                hwInterface.SetJointsToZero();
             }
         }
 
@@ -134,14 +162,16 @@ namespace CPRCANV2Protocol
         /// <summary>
         /// Provides the joint values in degree, each six values
         /// </summary>
-        /// <param name="jSetPoint">Set point values</param>
-        /// <param name="jCurrent">Current hardware values</param>
-        /// <param name="errorCodes">Joint error codes</param>
-        public void GetJointValues(ref double jSetPoint, ref double jCurrent, ref int errorCodes)
+        public void GetJointValues(ref double jPosSetPoint, ref double jPosCurrent, ref double jMotorCurrent, ref int errorCode, ref string errorCodeString)
         {
-            jSetPoint = this.jointsSetPoint;
-            jCurrent = this.jointsCurrent;
-            errorCodes = this.errorCodes;
+            lock (this)
+            {
+                jPosSetPoint = this.jointPositionSetPoint;
+                jPosCurrent = this.jointPositionCurrent;
+                jMotorCurrent = this.jointMotorCurrent;
+                errorCode = this.jointErrorCode;
+                errorCodeString = this.jointErrorCodeString;
+            }
         }
 
         //***************************************************************

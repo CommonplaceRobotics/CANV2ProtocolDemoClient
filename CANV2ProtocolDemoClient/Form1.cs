@@ -35,7 +35,22 @@ namespace CANV2ProtocolDemoClient
             else
                 labelConnection.Text = "Connection: not connected";
 
+            double jPosSetPoint = 0.0;
+            double jPosCurrent = 0.0;
+            double jMotorCurrent = 0.0;
+            int jErrorCode = 0;
+            string jErrorCodeString = "na";
+            mainLoop.GetJointValues(ref jPosSetPoint, ref jPosCurrent, ref jMotorCurrent, ref jErrorCode, ref jErrorCodeString);
+
+            labelJointStatus.Text = "Status: " + jErrorCodeString + " (" + jErrorCode.ToString() + ")";
+            labelPosSetPoint.Text = "SetPointPosition: " + jPosSetPoint.ToString("0.0") + "°";
+            labelPosition.Text = "CurrentPosition: " + jPosCurrent.ToString("0.0") + "°";
+            labelMotorCurrent.Text = "MotorCurrent: " + jMotorCurrent.ToString("0.0") + " mA";
+
         }
+
+        
+
 
         private void buttonConnect_Click(object sender, EventArgs e)
         {
@@ -68,17 +83,23 @@ namespace CANV2ProtocolDemoClient
 
         private void buttonStop_Click(object sender, EventArgs e)
         {
-            mainLoop.SetJogValue(20.0);
+            mainLoop.SetJogValue(0.0);
         }
 
         private void buttonForward_Click(object sender, EventArgs e)
         {
-            mainLoop.SetJogValue(0.0);
+            double jv = mainLoop.GetJogValue();
+            jv += 10.0;
+            if (jv > 100.0) jv = 100.0;
+            mainLoop.SetJogValue(jv);
         }
 
         private void buttonBackwards_Click(object sender, EventArgs e)
         {
-            mainLoop.SetJogValue(-20.0);
+            double jv = mainLoop.GetJogValue();
+            jv -= 10.0;
+            if (jv < -100.0) jv = -100.0;
+            mainLoop.SetJogValue(jv);
         }
 
         
