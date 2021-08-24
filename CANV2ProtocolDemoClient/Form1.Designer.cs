@@ -47,9 +47,9 @@
             // 
             // buttonConnect
             // 
-            this.buttonConnect.Location = new System.Drawing.Point(38, 126);
+            this.buttonConnect.Location = new System.Drawing.Point(25, 61);
             this.buttonConnect.Name = "buttonConnect";
-            this.buttonConnect.Size = new System.Drawing.Size(75, 23);
+            this.buttonConnect.Size = new System.Drawing.Size(131, 23);
             this.buttonConnect.TabIndex = 0;
             this.buttonConnect.Text = "Connect";
             this.buttonConnect.UseVisualStyleBackColor = true;
@@ -58,7 +58,7 @@
             // labelConnection
             // 
             this.labelConnection.AutoSize = true;
-            this.labelConnection.Location = new System.Drawing.Point(35, 88);
+            this.labelConnection.Location = new System.Drawing.Point(22, 23);
             this.labelConnection.Name = "labelConnection";
             this.labelConnection.Size = new System.Drawing.Size(147, 17);
             this.labelConnection.TabIndex = 1;
@@ -67,7 +67,7 @@
             // labelJointStatus
             // 
             this.labelJointStatus.AutoSize = true;
-            this.labelJointStatus.Location = new System.Drawing.Point(308, 88);
+            this.labelJointStatus.Location = new System.Drawing.Point(295, 23);
             this.labelJointStatus.Name = "labelJointStatus";
             this.labelJointStatus.Size = new System.Drawing.Size(106, 17);
             this.labelJointStatus.TabIndex = 2;
@@ -76,7 +76,7 @@
             // labelPosition
             // 
             this.labelPosition.AutoSize = true;
-            this.labelPosition.Location = new System.Drawing.Point(308, 141);
+            this.labelPosition.Location = new System.Drawing.Point(295, 75);
             this.labelPosition.Name = "labelPosition";
             this.labelPosition.Size = new System.Drawing.Size(129, 17);
             this.labelPosition.TabIndex = 3;
@@ -84,9 +84,9 @@
             // 
             // buttonForward
             // 
-            this.buttonForward.Location = new System.Drawing.Point(311, 211);
+            this.buttonForward.Location = new System.Drawing.Point(298, 146);
             this.buttonForward.Name = "buttonForward";
-            this.buttonForward.Size = new System.Drawing.Size(75, 23);
+            this.buttonForward.Size = new System.Drawing.Size(94, 23);
             this.buttonForward.TabIndex = 4;
             this.buttonForward.Text = "Forward";
             this.buttonForward.UseVisualStyleBackColor = true;
@@ -94,9 +94,9 @@
             // 
             // buttonStop
             // 
-            this.buttonStop.Location = new System.Drawing.Point(392, 211);
+            this.buttonStop.Location = new System.Drawing.Point(298, 175);
             this.buttonStop.Name = "buttonStop";
-            this.buttonStop.Size = new System.Drawing.Size(75, 23);
+            this.buttonStop.Size = new System.Drawing.Size(94, 23);
             this.buttonStop.TabIndex = 5;
             this.buttonStop.Text = "Stop";
             this.buttonStop.UseVisualStyleBackColor = true;
@@ -104,9 +104,9 @@
             // 
             // buttonBackwards
             // 
-            this.buttonBackwards.Location = new System.Drawing.Point(473, 211);
+            this.buttonBackwards.Location = new System.Drawing.Point(298, 204);
             this.buttonBackwards.Name = "buttonBackwards";
-            this.buttonBackwards.Size = new System.Drawing.Size(75, 23);
+            this.buttonBackwards.Size = new System.Drawing.Size(94, 23);
             this.buttonBackwards.TabIndex = 6;
             this.buttonBackwards.Text = "Backwards";
             this.buttonBackwards.UseVisualStyleBackColor = true;
@@ -114,9 +114,9 @@
             // 
             // buttonReset
             // 
-            this.buttonReset.Location = new System.Drawing.Point(38, 211);
+            this.buttonReset.Location = new System.Drawing.Point(25, 146);
             this.buttonReset.Name = "buttonReset";
-            this.buttonReset.Size = new System.Drawing.Size(75, 23);
+            this.buttonReset.Size = new System.Drawing.Size(131, 23);
             this.buttonReset.TabIndex = 7;
             this.buttonReset.Text = "Reset";
             this.buttonReset.UseVisualStyleBackColor = true;
@@ -124,9 +124,9 @@
             // 
             // buttonEnable
             // 
-            this.buttonEnable.Location = new System.Drawing.Point(38, 240);
+            this.buttonEnable.Location = new System.Drawing.Point(25, 175);
             this.buttonEnable.Name = "buttonEnable";
-            this.buttonEnable.Size = new System.Drawing.Size(75, 23);
+            this.buttonEnable.Size = new System.Drawing.Size(131, 23);
             this.buttonEnable.TabIndex = 8;
             this.buttonEnable.Text = "Enable";
             this.buttonEnable.UseVisualStyleBackColor = true;
@@ -134,9 +134,9 @@
             // 
             // buttonSetToZero
             // 
-            this.buttonSetToZero.Location = new System.Drawing.Point(38, 269);
+            this.buttonSetToZero.Location = new System.Drawing.Point(25, 204);
             this.buttonSetToZero.Name = "buttonSetToZero";
-            this.buttonSetToZero.Size = new System.Drawing.Size(75, 23);
+            this.buttonSetToZero.Size = new System.Drawing.Size(131, 23);
             this.buttonSetToZero.TabIndex = 9;
             this.buttonSetToZero.Text = "Set To Zero";
             this.buttonSetToZero.UseVisualStyleBackColor = true;
@@ -144,9 +144,9 @@
             // 
             // buttonStartReferencing
             // 
-            this.buttonStartReferencing.Location = new System.Drawing.Point(38, 298);
+            this.buttonStartReferencing.Location = new System.Drawing.Point(25, 233);
             this.buttonStartReferencing.Name = "buttonStartReferencing";
-            this.buttonStartReferencing.Size = new System.Drawing.Size(75, 23);
+            this.buttonStartReferencing.Size = new System.Drawing.Size(131, 23);
             this.buttonStartReferencing.TabIndex = 10;
             this.buttonStartReferencing.Text = "StartReferencing";
             this.buttonStartReferencing.UseVisualStyleBackColor = true;
@@ -159,7 +159,7 @@
             // labelPosSetPoint
             // 
             this.labelPosSetPoint.AutoSize = true;
-            this.labelPosSetPoint.Location = new System.Drawing.Point(308, 114);
+            this.labelPosSetPoint.Location = new System.Drawing.Point(295, 49);
             this.labelPosSetPoint.Name = "labelPosSetPoint";
             this.labelPosSetPoint.Size = new System.Drawing.Size(135, 17);
             this.labelPosSetPoint.TabIndex = 11;
@@ -168,7 +168,7 @@
             // labelMotorCurrent
             // 
             this.labelMotorCurrent.AutoSize = true;
-            this.labelMotorCurrent.Location = new System.Drawing.Point(308, 168);
+            this.labelMotorCurrent.Location = new System.Drawing.Point(295, 101);
             this.labelMotorCurrent.Name = "labelMotorCurrent";
             this.labelMotorCurrent.Size = new System.Drawing.Size(119, 17);
             this.labelMotorCurrent.TabIndex = 12;
@@ -178,7 +178,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(666, 317);
             this.Controls.Add(this.labelMotorCurrent);
             this.Controls.Add(this.labelPosSetPoint);
             this.Controls.Add(this.buttonStartReferencing);

@@ -91,9 +91,9 @@ namespace CPRCANV2Protocol
         /// Copies the current hardware position into the setpoint values and then resets the joint modules
         /// Error code afterwards is 0x04 motor not enabled. To move the robot arm the motors have to be enabled.
         /// </summary>
-        public void ResetJoints()
+        public void ResetJoint()
         {
-            this.SetJogValue(0);
+            this.SetJogValue(0);    // stop at first
 
             lock (this)
             {
@@ -102,6 +102,28 @@ namespace CPRCANV2Protocol
 
                 // then reset the joints to state 0x04
                 hwInterface.ResetErrors();
+            }
+        }
+
+        /// <summary>
+        /// Enable the Motor
+        /// The Motor has to be in 0x04 = MNE Motor not enabled state.
+        /// This is the state after "reset"
+        /// </summary>
+        public void EnableJoint()
+        {
+            if(jointErrorCode != 0x04)
+            {
+                string msg = "Error: Please reset before enabling;  " + System.Environment.NewLine 
+                    + "Status must be \"MNE\""; 
+                System.Windows.Forms.MessageBox.Show(msg);
+                return;
+            }
+
+            lock (this)
+            {
+                // then reset the joints to state 0x04
+                hwInterface.EnableMotor();
             }
         }
 
@@ -150,7 +172,7 @@ namespace CPRCANV2Protocol
         /// </summary>
         public void SetToZero(double jv)
         {
-            ResetJoints();
+            ResetJoint();
 
             lock (this)
             {

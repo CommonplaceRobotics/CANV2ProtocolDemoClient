@@ -59,12 +59,12 @@ namespace CANV2ProtocolDemoClient
 
         private void buttonReset_Click(object sender, EventArgs e)
         {
-            mainLoop.ResetJoints();
+            mainLoop.ResetJoint();
         }
 
         private void buttonEnable_Click(object sender, EventArgs e)
         {
-            mainLoop.hwInterface.EnableMotors();
+            mainLoop.EnableJoint();
         }
 
         private void buttonSetToZero_Click(object sender, EventArgs e)

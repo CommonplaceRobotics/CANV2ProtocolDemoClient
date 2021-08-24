@@ -19,7 +19,8 @@ namespace CPRCANV2Protocol
 {
     /// <summary>
     /// This class provides access to the CAN bus using the PCAN-USB adapter by Peak-System
-    /// The software works for both Mover4 and Mover6, but in Joint4 there are slightly different gear scales for Mover4 and Mover6, see WriteJointSetPoints() 
+    /// The software works a single joint using the CPRCANV2 protocol, but it can be extended quite easily to several joints
+    /// The software is intended as simple to understand prototype, for production use it has to be adapted/enhanced in many ways.
     /// </summary>
     class HardwareInterface
     {
@@ -44,7 +45,7 @@ namespace CPRCANV2Protocol
         /// <summary>
         /// Connects to the PCAN USB adapter
         /// </summary>
-        /// Only minimal error handling is implemented, see the Pead-Systeme support pages
+        /// Only minimal error handling is implemented, see the Peak-Systeme support pages
         public void Connect(){
 
             TPCANStatus stsResult;
@@ -77,14 +78,17 @@ namespace CPRCANV2Protocol
 
         //********************************************************************************
         /// <summary>
-        /// Writes the current joint set points to the CAN bus and reads the answers
-        /// This function has to be calles frequently. When there are interruptsion the joint electronic will
+        /// Writes the current joint set point to the CAN bus and reads the answer
+        /// This function has to be called frequently. When there are interruptsion the joint electronic will
         /// interprete this as a failure in the control and change into error state (comm watch dog)
         /// </summary>
-        /// <param name="jointsSetPoint">set point values in degree</param>
-        /// <param name="jointsCurrent">the current joint values read from the hardware in degree</param>
-        /// <param name="errorCodes">the joint error codes, see file start for explanation</param>
-        /// <param name="digitalIn">the digital input values of the joint modules</param>
+        /// <param name="jointSetPoint"> Position to go in degree / mm </param>
+        /// <param name="digitalOut"> State of the digital outputs (if there are any) of the module, coded binary </param>
+        /// <param name="jointCurrent"> Current position of the joint in degree / mm </param>
+        /// <param name="errorCode"> Numerical error code </param>
+        /// <param name="errorCodeString"> Error code as string </param>
+        /// <param name="motorCurrent"> Motor current in mA </param>
+        /// <param name="digitalIn"> Digital inputs (if there are any) of the module </param>
         public void WriteJointSetPoints(double jointSetPoint, int digitalOut, ref double jointCurrent, ref int errorCode, ref string errorCodeString, ref double motorCurrent, ref int digitalIn)
         {
             double gearZero = 0;
@@ -108,7 +112,7 @@ namespace CPRCANV2Protocol
                     CANMsg.LEN = (byte)8;
                     CANMsg.MSGTYPE = TPCANMessageType.PCAN_MESSAGE_STANDARD;
 
-                    // write the setPoint command
+                    // write the setPoint command to the CAN bus
                     // CPRCANV2 protocol:
                     // 0x14 vel pos0 pos1 pos2 pos3 timer dout
                     tmpPos = gearZero + jointSetPoint * gearScale;                  // generate the setPoint in encoder tics
@@ -123,7 +127,8 @@ namespace CPRCANV2Protocol
                     CANMsg.DATA[2] = (byte)((mPos >> 24) & 0xFF);
                     CANMsg.DATA[6] = (byte)timeStamp;                               // Time stamp (not used)
                     CANMsg.DATA[7] = (byte)digitalOut;                              // Digital our for this module, binary coded
-                                                                                    
+
+                    PCANBasic.Reset(m_PcanHandle);                                  // Reset especially the incoming message queue. These messages should be handled in a real word application!
 
                     stsResult = PCANBasic.Write(m_PcanHandle, ref CANMsg);          // write to the CAN bus
                     if (stsResult != TPCANStatus.PCAN_ERROR_OK)
@@ -135,10 +140,10 @@ namespace CPRCANV2Protocol
                     //wait a short time
                     System.Threading.Thread.Sleep(2);
 
-                    //read the answer
+                    // read the answer
                     // please be aware: this is only a demo implementation!
                     // for a real implementation all incoming messages have to be handeled!
-                    // This implementation misses some messages...
+                    // This implementation misses some messages the module sends, e.g. the PCB temperature,...
                     stsResult = PCANBasic.Read(m_PcanHandle, out CANMsg, out CANTimeStamp);
                     if (CANMsg.ID == (messageID + 1))                               // the answer is on CAN-ID+1
                     {
@@ -172,7 +177,7 @@ namespace CPRCANV2Protocol
 
         //**********************************************************************************
         /// <summary>
-        /// Resets the errors of all joint modules. Error will be 0x04 afterwards (motors not enabled)
+        /// Resets the errors of the joint module. Error will be 0x04 afterwards (motors not enabled)
         /// You need to enable the motors afterwards to get the robot in running state (0x00)
         /// </summary>
         public void ResetErrors()
@@ -198,9 +203,9 @@ namespace CPRCANV2Protocol
 
         //**********************************************************************************
         /// <summary>
-        /// Enables the motors, joint error state is 0x00 afterwards. 
+        /// Enables the motor, joint error state is 0x00 afterwards. 
         /// </summary>
-        public void EnableMotors()
+        public void EnableMotor()
         {
             // Protocol: 0x01 0x09 to enable a joint
             //           0x01 0x0A to disable a joint
@@ -224,7 +229,7 @@ namespace CPRCANV2Protocol
 
         //**********************************************************************************
         /// <summary>
-        /// Sets all joint modules to zero position (0x7D00)
+        /// Sets joint module to zero position 
         /// </summary>
         public void SetJointsToZero()
         {
@@ -235,7 +240,7 @@ namespace CPRCANV2Protocol
             CANMsg.MSGTYPE = TPCANMessageType.PCAN_MESSAGE_STANDARD;
             CANMsg.DATA[0] = 0x01;
             CANMsg.DATA[1] = 0x08;
-            CANMsg.DATA[2] = 0x7D;
+            CANMsg.DATA[2] = 0x00;
             CANMsg.DATA[3] = 0x00;
 
             flagStopSendingPositions = true;
