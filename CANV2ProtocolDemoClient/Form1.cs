@@ -19,7 +19,7 @@ namespace CANV2ProtocolDemoClient
         {
             InitializeComponent();
 
-            this.Text = "CPRCANV2 Protocol DemoClient V1.0 - Aug. 2021";
+            this.Text = "CPRCANV2 Protocol DemoClient V1.1 - April. 2022";
 
             mainLoop = new RobotControlLoop();
             mainLoop.SetOverride(50.0);
