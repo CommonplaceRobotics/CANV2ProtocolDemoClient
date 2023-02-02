@@ -13,7 +13,7 @@ namespace CPRCANV2Protocol
     {
 
         private Multimedia.Timer robotMainLoop;
-        private double cycleTime = 50;                          // the robot main loop runs with 20 Hz
+        private double cycleTime = 50;                          // 50ms for one cycle so the robot main loop runs with 20 Hz
 
         private double  jogValue = 0.0;                     // the commanded velocities from 0.0 to 100.0
         private double  robOverride = 30.0;                      // from 0 to 100, scales the movion velocity
