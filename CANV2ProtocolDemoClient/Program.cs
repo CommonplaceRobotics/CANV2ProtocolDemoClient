@@ -8,6 +8,12 @@ namespace CANV2ProtocolDemoClient
 {
     static class Program
     {
+        // Version of the CRI Demo Client
+        // Also update the lifecycle info in sbomify.json!
+        public static readonly int SWVersionMajor = 1;
+        public static readonly int SWVersionMinor = 2;
+        public static readonly int SWVersionPatch = 0;
+
         /// <summary>
         /// Der Haupteinstiegspunkt für die Anwendung.
         /// </summary>

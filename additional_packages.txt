@@ -1,0 +1,6 @@
+# This file specifies dependencies that are not defined in conanfile.py and therefore can not be detected
+# PURL Format specification: https://github.com/package-url/purl-spec
+# List of PURL package types: https://www.packageurl.org/docs/purl/purl-types
+
+# Dependencies from unknowns places
+pkg:generic/Multimedia@5.0.0
