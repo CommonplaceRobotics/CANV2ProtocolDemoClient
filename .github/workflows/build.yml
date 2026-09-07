@@ -1,21 +1,21 @@
-name: Build and Test
+name: Build
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "ci" ]
+    tags:
+      - "v*"
   pull_request:
     branches: [ "master" ]
-  # Workflow can be triggered manually
-  workflow_dispatch:
 
 jobs:
 
   build:
-
     runs-on: windows-2025
-
+    timeout-minutes: 10
+    
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v3
@@ -33,23 +33,119 @@ jobs:
         cd CANV2ProtocolDemoClient
         MSBuild.exe -p:Configuration="Release"
 
-    # TODO: There are no tests yet
-    #- name: Build Tests
-    #  run: MSBuild.exe -p:Configuration="Release" -t:"ModuleControl OpenLoop Tests"
-
     - name: Export binaries
       uses: actions/upload-artifact@v6
       with:
-        name: binaries
+        name: CANV2ProtocolDemoClient.zip
         path: ${{ github.workspace }}/CANV2ProtocolDemoClient/bin/Release
 
-    #- name: Run Tests
-    #  run: |
-    #    & "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" "$($env:GITHUB_WORKSPACE)\CRI_Client\CRI_Client_Tests.dll"
 
-    #- name: Run tests
-    #  uses: microsoft/vstest-action@main
-    #  with:
-    #    testAssembly: CRI_Client_Tests.dll
-    #    searchFolder: ${{ github.workspace }}\Tests\bin\Release\net481\
-    #    runInParallel: true
+  sbom_pt1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: build
+
+    steps:
+    - uses: actions/checkout@v7
+
+    # Liest die Core-Version aus dem NSIS-Installer-Skript
+    - name: Get software version
+      run: |
+        VER_MAJOR=`grep -E -o "SWVersionMajor[[:blank:]]+=[[:blank:]][[:digit:]]+" MainWindow.xaml.cs | sed "s/[^0-9.]*//g"`
+        VER_MINOR=`grep -E -o "SWVersionMinor[[:blank:]]+=[[:blank:]][[:digit:]]+" MainWindow.xaml.cs | sed "s/[^0-9.]*//g"`
+        VER_PATCH=`grep -E -o "SWVersionPatch[[:blank:]]+=[[:blank:]][[:digit:]]+" MainWindow.xaml.cs | sed "s/[^0-9.]*//g"`
+        echo "Software version '$VER_MAJOR.$VER_MINOR.$VER_PATCH' detected"
+        echo "SW_VERSION=$VER_MAJOR.$VER_MINOR.$VER_PATCH" >> $GITHUB_ENV
+
+    # SBOM erstellen
+    # Wie man die packages.lock.json bekommt: https://devblogs.microsoft.com/dotnet/enable-repeatable-package-restores-using-a-lock-file/
+    - uses: sbomify/sbomify-action@master
+      env:
+        # There are no packages in this project...
+        LOCK_FILE: none
+        #LOCK_FILE: ${{ github.workspace }}/CANV2ProtocolDemoClient/packages.lock.json
+        OUTPUT_FILE: sbom_temp1.cdx.json
+        COMPONENT_NAME: CANV2ProtocolDemoClient
+        COMPONENT_VERSION: ${{ env.SW_VERSION }}
+        # Produkt- und Firmeninfo werden aus sbomify.json geladen
+        AUGMENT: true
+        # Metadaten aus Paket-Registry hinzufügen
+        ENRICH: true
+        # Metadaten aus additional_packages.txt hinzufügen
+        ADDITIONAL_PACKAGES_FILE: ${{ github.workspace }}/additional_packages.txt
+        UPLOAD: false
+        
+    - name: Export incomplete SBOM
+      uses: actions/upload-artifact@v7
+      with:
+        name: sbom_temp1.cdx.json
+        path: sbom_temp1.cdx.json
+        archive: false
+
+
+  sbom_pt2:
+    runs-on: windows-2025
+    timeout-minutes: 10
+    needs: sbom_pt1
+
+    steps:
+    - uses: actions/checkout@v7
+    
+    - name: Import temporary SBOM
+      uses: actions/download-artifact@v8
+      with:
+        name: sbom_temp1.cdx.json
+
+    - name: Import binaries
+      uses: actions/download-artifact@v8
+      with:
+        name: CANV2ProtocolDemoClient.zip
+        skip-decompress: true
+
+    - name: Final SBOM enrichment
+      uses: CommonplaceRobotics/Action_SBOM_Enrichment@v9
+      with:
+        database: .github/workflows/sbom_enrichment_db.json
+        sbom: sbom_temp1.cdx.json
+        sbom_out: sbom.cdx.json
+        msproj_file: CANV2ProtocolDemoClient/CANV2ProtocolDemoClient.csproj
+
+    - name: Export SBOM
+      uses: actions/upload-artifact@v7
+      with:
+        path: sbom.cdx.json
+        archive: false
+
+    - name: Validate SBOM with company policies
+      uses: CommonplaceRobotics/Action_Validate_SBOM@v6
+      with:
+        sbom: sbom.cdx.json
+
+
+  release:
+    name: Publish GitHub Release
+    needs: sbom_pt2
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+
+    steps:
+    - name: Import binaries
+      uses: actions/download-artifact@v8
+      with:
+        name: CANV2ProtocolDemoClient.zip
+        path: dist/
+        skip-decompress: true
+    
+    - name: Import SBOM
+      uses: actions/download-artifact@v8
+      with:
+        name: sbom.cdx.json
+        path: dist/
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: dist/*
+        generate_release_notes: true
