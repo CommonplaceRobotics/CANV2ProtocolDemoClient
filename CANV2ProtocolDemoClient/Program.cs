@@ -12,7 +12,7 @@ namespace CANV2ProtocolDemoClient
         // Also update the lifecycle info in sbomify.json!
         public static readonly int SWVersionMajor = 1;
         public static readonly int SWVersionMinor = 2;
-        public static readonly int SWVersionPatch = 0;
+        public static readonly int SWVersionPatch = 1;
 
         /// <summary>
         /// Der Haupteinstiegspunkt für die Anwendung.
